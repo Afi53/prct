@@ -10,98 +10,193 @@ from bs4 import BeautifulSoup
 import re
 import os
 from PIL import Image
+from inspect import currentframe, getframeinfo
+import match
+from xl import load_l_turn,load_matches
+
+l_match=[]
+def lig_or_match(mt,tur):
+    try:
+        c = mt.find_element(By.XPATH, "./following-sibling::div[1]")
+        tag = c.get_attribute('class')
+        if tag == 'sport-competition--Xt2wb _clickable--QLum2 _compact--wuzr7':
+            return
+        elif tag == 'sport-event-separator--xZ16g _sub-event--Edkan':
+            b = c.find_element(By.XPATH, "./following-sibling::div[1]")
+            st_match(b,tur)
+            return
+        elif tag == 'sport-event-separator--xZ16g':
+            b = c.find_element(By.XPATH, "./following-sibling::div[1]")
+            st_match(b,tur)
+            return
+        else:
+            print (f'ошибка {mt.tag_name, mt.text}')
+    except Exception as ex:
+        print(getframeinfo(currentframe()).lineno)
+        print (mt.tag_name, mt.text)
+
+def st_match(mt,tur):
+    try:
+        if mt.text=='':
+            lig_or_match(mt,tur)
+            return
+        kom = mt.text.splitlines()[0]
+    except Exception as ex:
+        print(getframeinfo(currentframe()).lineno)
+        print(ex)
+        print(mt.get_attribute('class'))
+        lig_or_match(mt,tur)
+        return
+    try:
+        if (not  ' — ' in kom) or ('матч' in kom):
+            try:
+                lig_or_match(mt,tur)
+                return
+            except Exception as ex:
+                print(getframeinfo(currentframe()).lineno)
+                print(f'ошибка {kom}')
+                lig_or_match(mt, tur)
+        else:
+            try:
+                date = mt.text.splitlines()[1].split(' ')[0].strip()
+                if date=='Матч':
+                    date = mt.text.splitlines()[2].split(' ')[0].strip()
+                elif date.find(':')!=-1 or date=='Не':
+                    date='Сегодня'
+                data = match.transform_date(date)
+            except Exception as ex:
+                print(getframeinfo(currentframe()))
+                data = f'ошибка даты'
+            k_1 = kom.split(' — ')[0]
+            try:
+                k_2 = kom.split(' — ')[1]
+            except Exception as ex:
+                print(f'нет второй команды {k_1}')
+            try:
+                match_1 = mt.find_elements(By.XPATH,'./div[@class="factor-value--zrkpK _normal--LfrKg _value--XNfOo _interactive--xaSFF table-component-factor-value_single--TOTnW _compact--K5sVc"]')
+            except Exception as ex:
+                print(getframeinfo(currentframe()).lineno)
+                print(f'ошибка {kom}')
+            l_st=[]
+            for i in range(6):
+                try:
+                    st = float(match_1[i].text)
+                except Exception as ex:
+                    st = None
+                l_st.append(st)
+            rq = match.Match(tur, data, k_1, k_2, l_st[0], l_st[1], l_st[2], l_st[3], l_st[4], l_st[5])
+            print(vars(rq).values())
+            l_match.append(rq)
+            lig_or_match(mt,tur)
+            return
+    except Exception as ex:
+        print(getframeinfo(currentframe()).lineno)
+        print(f'ошибка {kom}')
+        lig_or_match(mt, tur)
 
 def get_selen_F():
     directory = 'C:\\Users\Professional\prct\Bookmaker\Scrin'
-    driver=uc.Chrome()
-    driver.get('https://www.fon.bet/sports/football/?dateInterval=6') # 6 - день
-    time.sleep(35)
-    dv_ish = driver.find_elements(By.XPATH,'//span[@class="caption--4XueAn"]')
-    try:
-        dv_ish[1].click()
-    except Exception as ex:
-        driver.refresh()
-        print(ex)
-    try:
-        driver.find_element(By.XPATH,'//div[@class="table-component-market-combo__popup--2YGxBV"]').click()
-    except Exception as ex:
-        driver.refresh()
-        print(ex)
-    soup_1=BeautifulSoup(driver.page_source,'lxml')
-    usl_1=""
-    count=0
     dm=datetime.date.today().day
-    driver.minimize_window()
+    fp = 'C:\\Users\Professional\prct\Bookmaker\WR.xlsx'
+    sh = 'Лист2'
+    d_ligs=match.d_liges()  # словарь лиг
+    k = 1
+    driver = uc.Chrome()
+    driver.get('https://www.fon.bet/sports/football/?dateInterval=6')  # 6 - день
+    time.sleep(randint(40, 50))
+
+    c=driver.find_elements(By.XPATH,'//div[@class="row--jpv3h _clickable--vp1EO"]')[1]
+    c.click()   # открываем список Исходы, тоталы, форы двойные шансы
+    try:
+        f=driver.find_element(By.XPATH,'//div[@data-source="portal"]')
+    except Exception as ex:
+        print(ex)
+    try:
+        g = f.find_elements(By.XPATH, './/div/div/div')[3].click() # выбор двойные шансы
+    except Exception as ex:
+        print(ex)
+    d=True
+    l_turs = []
     while True:
-        if count<10:
-            item = f'scr_{dm}_0{count}.png'  # названия файлов скринов
+        if d==False:
+            break
+        if k < 10:
+            item = f'scr_{dm}_0{k}.png'  # названия файлов скринов
         else:
-            item = f'scr_{dm}_{count}.png'
+            item = f'scr_{dm}_{k}.png'
         patch = os.path.join(directory, item)  # путь к скринам
         try:
             driver.save_screenshot(patch)
         except Exception as ex:
             print(ex)
-        usl = driver.find_elements(By.XPATH, '//div[@class="tournament-competition-section__caption--2ARlku"]')
-        if len(usl)>0:
-            print(len(usl))
- #           break
-        try:
-            dfe=driver.find_element(By.XPATH,'//div[@class="sport-base-event__main__caption--11Epy3 _clickable--3VqjxU _inline--4pgDR3"]').text
+        liges = driver.find_elements(By.XPATH,'//div[@class="sport-competition--Xt2wb _clickable--QLum2 _compact--wuzr7"]')  # список лиг на странице
+        if k==1:
+            liges = liges[1:]  # а на 1-ой странице обрезаем первую строку
+        for lig in liges:
+            try:
+                tur = lig.text.splitlines()[0].title().strip()
+            except:
+                print(getframeinfo(currentframe()).lineno)
+                tur = lig.text.strip()
+            if 'Жен' in tur or 'Fc' in tur:
+                d=False
+                break
+            if ('До ' in tur)  or ('Кубок' in tur) or ('Хозяева' in tur):
+                continue
+            elif tur=='Босния И Герцеговина. Премьер-Лига':
+                tur='Босния и Герцеговина. Премьер-Лига'
+            else:
+                tur = ' '.join(tur.split()[:3])  # названия лиг 3 слова
+            print(tur)
+            if not tur in d_ligs.values():  # поиск в значениях словаря лиг
+                try:
+                    tur= d_ligs[tur]  # поиск по ключам
+                except KeyError:
+                    if tur!=l_turs[:-1]:
+                        l_turs.append(tur) # добавляем в список лиг без словаря
+                        print(getframeinfo(currentframe()).lineno)
+                        print(f'{tur} ошибка словаря')
+                    continue
+            try:
+                mt = lig.find_element(By.XPATH, "./following-sibling::div[1]")  # переход к тегу с матчем
+                tag = mt.get_attribute('class')
+            except Exception as ex:
+                print(getframeinfo(currentframe()).lineno, tag)
+#                print(ex)
+                continue
+            st_match(mt,tur)
+
+        try:                                  # поиск элемента для скроллинга
+            a = driver.find_elements(By.XPATH, '//div[@class="scrollbar--y_qLI scroll-area__scrollbar--L_UN7 _vertical--GdKOZ _vertical--aYpNv"]')  # /span
         except Exception as ex:
-            print(ex)
+            print(getframeinfo(currentframe()))
             break
-        if usl_1!=dfe:
-            usl_1= dfe
-        else:
-            break
-        a=driver.find_elements(By.XPATH,'//div[@class="scrollbar--SQKjxm custom-scrollbar-area__scrollbar--63fqKB _vertical--4rxDxV _vertical--6Cdhjn"]')
-        action= AC(a[0])
+        action = AC(a[1])
         try:
-            a[0].send_keys((Keys.PAGE_DOWN))
-            time.sleep(randint(10, 15))
-        except Exception.TimeoutException as ex:
-            print (ex)
-            break
-        soup_2=BeautifulSoup(driver.page_source,'lxml')
-        with open(f"index.html", "w", encoding="utf-8") as file:
-            file.write(soup_1.prettify())
-        for el in soup_2.body:
-            soup_1.body.append(el)
-        count+=1
-        print(count)
+            a[1].send_keys(Keys.PAGE_DOWN)  # страница вниз
+            time.sleep(20)
+            a[1].send_keys(Keys.ARROW_UP)   # две строки вверх
+            time.sleep(15)
+            k += 1  # кол-во страниц
+            print(k)
+            if k == 50:
+                break
+        except Exception as ex:
+            print(getframeinfo(currentframe()).lineno)
+            print(ex)
     driver.close()
     driver.quit()
-    with open(f"index.html", "w", encoding="utf-8") as file:
-        file.write(soup_1.prettify())
+    try:
+        load_l_turn(l_turs) # список лиг, которых нет в словаре
+    except Exception as ex:
+        print(ex)
+    return l_match,fp,sh
 
-def get_decomp():
-    with open("index.html","r",encoding='utf-8') as file:
-        data=file.read()
-    soup=BeautifulSoup(data,'lxml')
-    l_ff=[['div',{'style': re.compile(r'^height')}],['div',{'id':'footerContainer'}],
-          ['div',{'class':'how2play__inner--2Xl3kD'}],['div',{'class':'slider--26rfFe _type_compact--7G3qLf'}],
-          ['div',{'class':'header__inner _theme_red _lang_ru _sports'}],
-          ['div',{'class':'session-dialog'}],
-          ['div',{'class':'table-component-market-combo--7HIt0I _clickable--1jPpDa sport-section__market--1b352g'}],
-          ['div',{'class':'horizontal-panel__items--2pfRES'}],
-          ['div',{'class':'session-dialog__container'}],
-          ['div',{'class':'banner-template__inner--437Y9N'}],
-          ['div',{'class':'live-tex-chat-button--17qAzv fonG-live-tex-chat-button'}],
-          ['div',{'class':'sport-table-sticky--6eD2U2'}],
-          ['div',{'id':'headerContainer'}],
-          ['div',{'style':'visibility: hidden; overflow: scroll; position: absolute; left: -100px; top: -100px; width: 50px; height: 50px;'}]]
-    for i in range(len(l_ff)):
-        st=soup.find_all(l_ff[i][0],attrs=l_ff[i][1])
-        n=len(st)
-        for k in st:
-            k.decompose()
-    with open(f"index_1.html", "w", encoding="utf-8") as file:
-        file.write(soup.prettify())
-    file_save = f'index_{datetime.date.today().month}_{datetime.date.today().day}.html'
-    directory=f'C:\\Users\Professional\prct\Bookmaker\Scrin'
-    with open(os.path.join(directory,file_save), "w", encoding="utf-8") as file:
-        file.write(soup.prettify())
+
+# l_matches,fp,sh=get_selen_F()
+# load_matches(l_matches,fp,sh)
+
+
 
 def get_png():
     directory=f'C:\\Users\Professional\prct\Bookmaker\Scrin'
@@ -240,11 +335,14 @@ def get_selen_Marafon(l_turn):                      #  (l_turn):
         time.sleep(15)
         soup_1 = BeautifulSoup(driver.page_source, 'lxml')
         tag=soup_1.find('div',class_='events-container')
-        soup.body.append(tag)
+        try:
+            soup.body.append(tag)
+        except Exception as ex:
+            print(ex)
     with open(f"index_M.html", "w", encoding="utf-8") as file:
         file.write(soup.prettify())
     driver.close()
     driver.quit()
 
-# get_selen_Marafon()
+
 

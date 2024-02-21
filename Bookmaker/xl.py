@@ -17,17 +17,17 @@ def load_matches(match,fp,sh):
     sh_2=wb[sh]
     for m in match:
         sh_2.append(list(vars(m).values()))
-    if fp == 'C:\\Users\Professional\prct\Bookmaker\WR.xlsx':
-#        множество лиг для селен Лига ставок
-        l_liges = [m.liga for m in match]
-        s_liges = set(l_liges)
-        wa=openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
-        sh_3=wa['Лист3']
-        sh_3.delete_rows(sh_3.max_row)
-        for row_num, data in enumerate(s_liges):
-            sh_3.cell(row_num + 1, 1, data)
-            wa.save('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
-            wa.save('D:\\Мега\Documents and Settings\Букм\Фонбет.xlsx')
+#     if fp == 'C:\\Users\Professional\prct\Bookmaker\WR.xlsx':
+# #        множество лиг для селен Лига ставок
+#         l_liges = [m.liga for m in match]
+#         s_liges = set(l_liges)
+#         wa=openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
+#         sh_3=wa['Лист3']
+#         sh_3.delete_rows(sh_3.max_row)
+#         for row_num, data in enumerate(s_liges):
+#             sh_3.cell(row_num + 1, 1, data)
+#             wa.save('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
+#             wa.save('D:\\Мега\Documents and Settings\Букм\Фонбет.xlsx')
     wb.save(fp)
 
 def get_url():
@@ -52,8 +52,6 @@ def get_url_ls():
                 l_url.append(row)
     return l_url
 
-
-
 def d_comand():
     wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
     sh_2 = wa['Словари']
@@ -73,6 +71,21 @@ def d_liges_file_name():
         if not row[2].value is None:
             d_liges[row[2].value]=row[0].value
     return d_liges
+
+def load_l_turn(turn):
+    wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\WR.xlsx')
+    sh_1=wa['Лист1']
+    try:
+       for row, t in enumerate(turn,start=1):
+            sh_1.cell(row,column=1).value=t
+    except Exception as ex:
+        print(ex)
+    wa.save('C:\\Users\Professional\prct\Bookmaker\WR.xlsx')
+    k=1
+    for i in turn:
+        sh_1.cell(k,1).value=i
+        k+=1
+    wa.save('C:\\Users\Professional\prct\Bookmaker\WR.xlsx')
 
 def set_liges(sh_name):
     # выгрузка списка матчей для поиска результатов

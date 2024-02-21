@@ -3,7 +3,6 @@ import datetime
 import re
 import openpyxl
 
-
 class Match:
     def __init__(self,liga,data,k_1,k_2,st_1,st_n,st_2,st_dv1,st_dv12,st_dv2): #,g1,g2,\
 #                 rez_rmk,rez_rbk,rez_rmkn, rez_rbkn,rez_n,rez_r1,rez_r2, rez_r12,rez_rn1,rez_rn2):  #
@@ -19,7 +18,7 @@ class Match:
         self.st_dv2=st_dv2
 
 def transform_date(date):
-    d_months = {'января': '01','янв':'01', 'февраля': "02", 'фев': "02",'марта':'03', 'апреля':'04', 'мая':'05', 'июня':'06',
+    d_months = {'января': '01','янв':'01', 'февраля': "02", 'фев': "02",'марта':'03', 'мар':'03','апреля':'04', 'мая':'05', 'июня':'06',
         'июля':'07', 'августа':'08', 'сентября':'09', 'октября':'10', 'ноября':'11', 'декабря':'12'}
     def nul_md(a):   #дата и месяц <10
         a=int(a)
@@ -51,7 +50,10 @@ def transform_date(date):
             day = (datetime.date.today()+ datetime.timedelta(days=1)).day
         else:
             year = str((datetime.date.today() + datetime.timedelta(days=2)).year)
-            mont= int(d_months[d[1]])
+            try:
+                mont= int(d_months[d[1]])
+            except Exception:
+                print('ошибка в месяяце')
             day=int(d[0])
         data_match = f'{nul_md(day)}.{nul_md(mont)}.{year}'
     return data_match
@@ -67,15 +69,6 @@ def tomorrow_data():
         return d+1
     else:
         return 1
-
-# print(tomorrow_data())
-def n_sib(a):
-    b=a.find_next_sibling('div')
-    if b.text.strip() == '-':
-        b_txt = None
-    else:
-        b_txt = float(b.text)
-    return b,b_txt
 
 def d_liges():
     wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
@@ -105,7 +98,7 @@ def get_data_LS():
             try:
                 liga = d_ligs[tur]
             except KeyError:
-                print(f'{tur} ошибка словаря')
+                print(f'{tur} ошибка словаря ЛС')
                 continue
         section=lig.find('div', class_='events-proposed__wrapper-events-f8fbd6')
         matches=section.find_all('div',class_='bui-event-row-dfbc70')
@@ -151,81 +144,82 @@ def conv_st(stavka):
     b=float(a)
     return b
 
-def get_data_F(turn):
-    # ставки Фонбет
-    with open("C:\\Users\Professional\prct\Bookmaker\index_1.html", "r", encoding='utf-8') as file:
-        content = file.read()
-    soup = BeautifulSoup(content, 'lxml')
-    l_match = []
-    pages = soup.find('div', class_='sport-footer__wrap--68PGoK')
-    sp = pages.find('div', class_='sport-section-virtual-list--6lYPYe') #      'sport-section--7jNGXZ _compact--7KyLWd')
-    try:
-        tkt = pages.find('div', class_='sport-competition--PvDzHX _clickable--ogfexh _compact--6zvh5M').find('div', class_='table-component-text--5BmeJU')
-    except Exception as ex:
-        print(ex)
-        try:
-            tkt = pages.find('div',class_='sport-competition--PvDzHX _collapsed--mwXS55 _clickable--ogfexh _compact--6zvh5M').find(
-                'div', class_='table-component-text--5BmeJU')
-        except  Exception as ex:
-            pass
-    if tkt.text.strip()=='Босния и Герцеговина. Премьер-Лига':
-        tur='Босния и Герцеговина. Премьер-Лига'
-    elif tkt.text.strip()=='Беларусь. Высшая лига.Резервная лига':
-        tur=''
-    else:
-        tur = ' '.join(tkt.text.strip().split()[:3])
-        if tur[(len(tur)-1):]=='.':
-            tur=tur[:-1]
-    print(tur)
-    matches = soup.find_all('div', class_='sport-base-event--pDx9cf _compact--5fB1ok')
-    n = len(matches)
-    print(n)
-    for match in matches:
-        if tur in turn:
-            try:
-                data_m = match.find('div', 'event-block-planned-time--5OxWPy').find('span')  # .text
-                data= transform_date(data_m.text)
-                komand = match.find('a',class_='table-component-text--5BmeJU sport-event__name--HefZLq _clickable--G5cwQm _event-view--7J8rEd _compact--7BwYe1')
-                kom = komand.text.replace("\n", "").strip()
-                k_1 = kom.split(' — ')[0]
-                if not 'матч' in k_1:
-                    if len(l_match) == 0 or (len(l_match) != 0 and k_1 != l_match[-1].k_1):
-                        k_2 = kom.split(' — ')[1]
-                        s_1=match.find("div",class_=re.compile("table-component-factor-value_single--6nfox5 _compact"))
-                        st_1=None
-                        try:
-                            st_1=float(s_1.text)
-                        except Exception as ex:
-                            print(s_1, ex)
-                        s_n, st_n = n_sib(s_1)
-                        s_2, st_2 = n_sib(s_n)
-                        dv_1, dvi_1 = n_sib(s_2)
-                        dv_12, dvi_12 = n_sib(dv_1)
-                        dv_2, dvi_2 = n_sib(dv_12)
-                        m=Match(tur,data,k_1,k_2,st_1,st_n,st_2,dvi_1,dvi_12,dvi_2)
-                        print(vars(m).values())
-                        l_match.append(m)
-            except Exception as ex:
-                print(ex)
-        lig = match.find_next_sibling("div")
-        tag_str = str(lig)[12:27]
-        if tag_str == "sport-competiti":
-            try:
-                tur_poln = lig.find('div', class_='table-component-text--5BmeJU').text
-                if tur_poln.strip()=='Босния и Герцеговина. Премьер-Лига':
-                    tur='Босния и Герцеговина. Премьер-Лига'
-                elif tur_poln.strip()=='Беларусь. Высшая лига.Резервная лига':
-                    continue
-                else:
-                    tur = (' '.join(tur_poln.strip().split()[:3])).strip()
-                    if tur[(len(tur) - 1):] == '.':
-                        tur = tur[:-1]
-                print(tur)
-            except Exception as ex:
-                continue
-    fp='C:\\Users\Professional\prct\Bookmaker\WR.xlsx'
-    sh='Лист2'
-    return l_match,fp,sh
+# def get_data_F(turn):
+#     pass
+#     # ставки Фонбет
+#     with open("C:\\Users\Professional\prct\Bookmaker\index_1.html", "r", encoding='utf-8') as file:
+#         content = file.read()
+#     soup = BeautifulSoup(content, 'lxml')
+#     l_match = []
+#     pages = soup.find('div', class_='sport-footer__wrap--68PGoK')
+#     sp = pages.find('div', class_='sport-section-virtual-list--6lYPYe') #      'sport-section--7jNGXZ _compact--7KyLWd')
+#     try:
+#         tkt = pages.find('div', class_='sport-competition--PvDzHX _clickable--ogfexh _compact--6zvh5M').find('div', class_='table-component-text--5BmeJU')
+#     except Exception as ex:
+#         print(ex)
+#         try:
+#             tkt = pages.find('div',class_='sport-competition--PvDzHX _collapsed--mwXS55 _clickable--ogfexh _compact--6zvh5M').find(
+#                 'div', class_='table-component-text--5BmeJU')
+#         except  Exception as ex:
+#             pass
+#     if tkt.text.strip()=='Босния и Герцеговина. Премьер-Лига':
+#         tur='Босния и Герцеговина. Премьер-Лига'
+#     elif tkt.text.strip()=='Беларусь. Высшая лига.Резервная лига':
+#         tur=''
+#     else:
+#         tur = ' '.join(tkt.text.strip().split()[:3])
+#         if tur[(len(tur)-1):]=='.':
+#             tur=tur[:-1]
+#     print(tur)
+#     matches = soup.find_all('div', class_='sport-base-event--pDx9cf _compact--5fB1ok')
+#     n = len(matches)
+#     print(n)
+#     for match in matches:
+#         if tur in turn:
+#             try:
+#                 data_m = match.find('div', 'event-block-planned-time--5OxWPy').find('span')  # .text
+#                 data= transform_date(data_m.text)
+#                 komand = match.find('a',class_='table-component-text--5BmeJU sport-event__name--HefZLq _clickable--G5cwQm _event-view--7J8rEd _compact--7BwYe1')
+#                 kom = komand.text.replace("\n", "").strip()
+#                 k_1 = kom.split(' — ')[0]
+#                 if not 'матч' in k_1:
+#                     if len(l_match) == 0 or (len(l_match) != 0 and k_1 != l_match[-1].k_1):
+#                         k_2 = kom.split(' — ')[1]
+#                         s_1=match.find("div",class_=re.compile("table-component-factor-value_single--6nfox5 _compact"))
+#                         st_1=None
+#                         try:
+#                             st_1=float(s_1.text)
+#                         except Exception as ex:
+#                             print(s_1, ex)
+#                         s_n, st_n = n_sib(s_1)
+#                         s_2, st_2 = n_sib(s_n)
+#                         dv_1, dvi_1 = n_sib(s_2)
+#                         dv_12, dvi_12 = n_sib(dv_1)
+#                         dv_2, dvi_2 = n_sib(dv_12)
+#                         m=Match(tur,data,k_1,k_2,st_1,st_n,st_2,dvi_1,dvi_12,dvi_2)
+#                         print(vars(m).values())
+#                         l_match.append(m)
+#             except Exception as ex:
+#                 print(ex)
+#         lig = match.find_next_sibling("div")
+#         tag_str = str(lig)[12:27]
+#         if tag_str == "sport-competiti":
+#             try:
+#                 tur_poln = lig.find('div', class_='table-component-text--5BmeJU').text
+#                 if tur_poln.strip()=='Босния и Герцеговина. Премьер-Лига':
+#                     tur='Босния и Герцеговина. Премьер-Лига'
+#                 elif tur_poln.strip()=='Беларусь. Высшая лига.Резервная лига':
+#                     continue
+#                 else:
+#                     tur = (' '.join(tur_poln.strip().split()[:3])).strip()
+#                     if tur[(len(tur) - 1):] == '.':
+#                         tur = tur[:-1]
+#                 print(tur)
+#             except Exception as ex:
+#                 continue
+#     fp='C:\\Users\Professional\prct\Bookmaker\WR.xlsx'
+#     sh='Лист2'
+#     return l_match,fp,sh
 
 def get_data_BS(d_ligs):
     with open("index_BS.html","r",encoding='utf-8') as file:
