@@ -117,9 +117,7 @@ def get_selen_F():
         print(ex)
     d=True
     l_turs = []
-    while True:
-        if d==False:
-            break
+    while d:
         if k < 10:
             item = f'scr_{dm}_0{k}.png'  # названия файлов скринов
         else:
@@ -136,15 +134,17 @@ def get_selen_F():
             try:
                 tur = lig.text.splitlines()[0].title().strip()
             except:
-                print(getframeinfo(currentframe()).lineno)
+#                print(getframeinfo(currentframe()).lineno)
                 tur = lig.text.strip()
-            if 'Жен' in tur or 'Fc' in tur:
+            if 'Жен' in tur or 'Fc' in tur or 'Статистика' in tur:
                 d=False
                 break
-            if ('До ' in tur)  or ('Кубок' in tur) or ('Хозяева' in tur):
+            if ('До ' in tur)  or ('Кубок' in tur) or ('Хозяева' in tur) or "Товарищ" in tur:
                 continue
             elif tur=='Босния И Герцеговина. Премьер-Лига':
                 tur='Босния и Герцеговина. Премьер-Лига'
+            elif tur == 'Босния И Герцеговина. 1-Я Лига':
+                continue
             else:
                 tur = ' '.join(tur.split()[:3])  # названия лиг 3 слова
             print(tur)
@@ -152,20 +152,18 @@ def get_selen_F():
                 try:
                     tur= d_ligs[tur]  # поиск по ключам
                 except KeyError:
-                    if tur!=l_turs[:-1]:
+                    if len(l_turs)==0 or tur!=l_turs[-1]:
                         l_turs.append(tur) # добавляем в список лиг без словаря
-                        print(getframeinfo(currentframe()).lineno)
                         print(f'{tur} ошибка словаря')
                     continue
             try:
                 mt = lig.find_element(By.XPATH, "./following-sibling::div[1]")  # переход к тегу с матчем
                 tag = mt.get_attribute('class')
             except Exception as ex:
-                print(getframeinfo(currentframe()).lineno, tag)
+#                print(getframeinfo(currentframe()).lineno, tag)
 #                print(ex)
                 continue
             st_match(mt,tur)
-
         try:                                  # поиск элемента для скроллинга
             a = driver.find_elements(By.XPATH, '//div[@class="scrollbar--y_qLI scroll-area__scrollbar--L_UN7 _vertical--GdKOZ _vertical--aYpNv"]')  # /span
         except Exception as ex:
@@ -179,8 +177,8 @@ def get_selen_F():
             time.sleep(15)
             k += 1  # кол-во страниц
             print(k)
-            if k == 50:
-                break
+            # if k == 50:
+            #     break
         except Exception as ex:
             print(getframeinfo(currentframe()).lineno)
             print(ex)
@@ -275,7 +273,7 @@ def get_selen_LS(l_turn):
 
     get_selen_BS(l_turn)
     get_selen_Marafon(l_turn)
-    driver.quit()
+#    driver.quit()
 
 def get_selen_BS(l_turn):                    #(l_turn):
     with open('soup.html', "r", encoding='utf-8') as f:
@@ -342,7 +340,7 @@ def get_selen_Marafon(l_turn):                      #  (l_turn):
     with open(f"index_M.html", "w", encoding="utf-8") as file:
         file.write(soup.prettify())
     driver.close()
-    driver.quit()
+ #   driver.quit()
 
 
 

@@ -1,5 +1,22 @@
 import openpyxl
 from datetime import datetime
+import win32com.client as win32
+import os
+
+def chek_open(my_wb):
+    try:
+        xl = win32.gencache.EnsureDispatch('Excel.Application')
+        if xl.Workbooks.Count > 0:
+#            my_wb = 'Фонбет.xlsx'
+            if any(i.Name == my_wb for i in xl.Workbooks):
+                dir_path = 'C:\\Users\Professional\prct\Bookmaker'
+                patch = os.path.join(dir_path, my_wb)
+                wb = xl.Workbooks.Open(patch)
+                wb.Visible = False
+                wb.Save()
+                wb.Close()
+    except Exception as ex:
+        print(ex)
 
 
 def turn():
@@ -17,17 +34,6 @@ def load_matches(match,fp,sh):
     sh_2=wb[sh]
     for m in match:
         sh_2.append(list(vars(m).values()))
-#     if fp == 'C:\\Users\Professional\prct\Bookmaker\WR.xlsx':
-# #        множество лиг для селен Лига ставок
-#         l_liges = [m.liga for m in match]
-#         s_liges = set(l_liges)
-#         wa=openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
-#         sh_3=wa['Лист3']
-#         sh_3.delete_rows(sh_3.max_row)
-#         for row_num, data in enumerate(s_liges):
-#             sh_3.cell(row_num + 1, 1, data)
-#             wa.save('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
-#             wa.save('D:\\Мега\Documents and Settings\Букм\Фонбет.xlsx')
     wb.save(fp)
 
 def get_url():
@@ -122,6 +128,7 @@ def stat():
     def add_l_sp(l_cp,a):
 # a - столбец суммирования списка матчей
         l_match_tur=[m for m in l_cp if m[2] is None]
+    # отбор лиг без количесвва матчей в туре
         if any(l_match_tur)==True:
             print('нет количества матчей в туре')
             print([m[0] for m in l_match_tur])
@@ -131,11 +138,17 @@ def stat():
             l_m_lig = [m for m in l_m_sort if m[0] == row[0]]
             r= len(l_m_lig)-row[1]
             l_m_lig_sr=l_m_lig[r:]
+ # список матче с результатом
             n = len(l_m_lig_sr)
-            m_tur = row[2]
-            for i in range(n % m_tur, n + 1, m_tur):
+            m_tur = row[2]  # матчей в туре
+            if n>30*m_tur:
+                l_m_lig_sr=l_m_lig_sr[-(30*m_tur):]
+                k=0
+            else:
+                k=n%m_tur
+            for i in range(k, n + 1, m_tur):
                 l_otb = l_m_lig_sr[:i]
-                row.append(sum([m[a] for m in l_otb]))
+                row.append(sum([m[a] for m in l_otb])) # добавляются результаты в список лиги
         return l_cp
 
     def load_sh(name_sheet,l_rez):
@@ -220,4 +233,4 @@ def stat():
     ws.save('Фонбет.xlsx')
     ws.save('D:\\Мега\Documents and Settings\Букм\Фонбет.xlsx')
 
-# stat()
+#stat()
