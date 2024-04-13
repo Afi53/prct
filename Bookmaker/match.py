@@ -80,7 +80,17 @@ def d_liges():
             d_liges[row[0].strip()]=row[1].strip()
     return d_liges
 
-def get_data_LS():
+def l_match_lig(s_l):
+    wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
+    sh_1=wa["Ставки"]
+    m_row_h = len([cell for cell in sh_1['K'] if not cell.value is None])
+    l=[row for row in sh_1.iter_rows(min_row=m_row_h + 2, max_col=4,values_only=True)]
+    l_m=[x for x in l if x[0] in s_l]
+    return l_m
+
+# l_match_lig()
+
+def get_data_LS(l_turn):
     d_ligs=d_liges()
     with open("index_LS.html","r",encoding='utf-8') as file:
         data=file.read()
@@ -130,6 +140,12 @@ def get_data_LS():
 #            m = Match(liga, date, k_1, k_2, st_1, st_n, st_2,st_dv1,st_dv2,st_dv12)
             m = Match(liga, date, k_1, k_2, st_1, st_n, st_2,None,None,None)
             l_matches.append(m)
+    s_l=set(x[0] for x in l_turn)-set(x.liga for x in l_matches)
+    if s_l!=0:
+        l_m=l_match_lig(s_l)
+        for k in l_m:
+            m = Match(k[0], k[1], k[2], k[3], None, None, None,None,None,None)
+            l_matches.append(m)
     l_matches_BS= get_data_BS(d_ligs)
     l_matches_M=get_data_Mar(d_ligs)
     join_Lig(l_matches, l_matches_BS,l_matches_M)
@@ -159,7 +175,7 @@ def get_data_BS(d_ligs):
             tur='Лига Конференций УЕФА'
         elif tur[-1]=='.':
             tur=(tur[:(len(tur)-1)]).strip()
-        print(tur,type(tur))
+        print(tur)
         if tur in d_ligs.values():
             liga=tur
         else:

@@ -49,7 +49,7 @@ def get_url_ls():
     wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
     sh_1 = wa["Ставки"]
     m_row_h = len([cell for cell in sh_1['K'] if not cell.value is None]) # матчи без рез
-    s_lig = sorted(set([row[0].value for row in sh_1.iter_rows(min_row=m_row_h + 1, max_col=1)])) # множество лиг
+    s_lig = sorted(set([row[0].value for row in sh_1.iter_rows(min_row=m_row_h + 1, max_col=1)])) # множество лиг по матчам без рез
     sh_2 = wa['Словари']
     l_url=[]
     for row in sh_2.iter_rows(min_row=1,max_row=95, max_col=9,values_only=True):
@@ -57,6 +57,7 @@ def get_url_ls():
             if row[0] in s_lig:
                 l_url.append(row)
     return l_url
+# get_url_ls()
 
 def d_comand():
     wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
@@ -101,17 +102,18 @@ def set_liges(sh_name):
     l=sorted(set([row[0].value for row in sh_1.iter_rows(min_row=m_row_h + 2, max_col=1)]))
     print(l)
 
+
+
 def stat():
     ws = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx')
     wa = openpyxl.load_workbook('C:\\Users\Professional\prct\Bookmaker\Фонбет.xlsx',data_only=True)
     sh_1=wa["Ставки"]
     l_matches=[]
     for row in sh_1.iter_rows(min_row=2,max_col=22,values_only=True):
-        if not row[10] is None:
+        if not row[10] is None: #отбор строк с результатами
             dat = datetime.strptime(row[1], "%d.%m.%Y").date()
-            l_matches.append([row[0],dat,row[12],row[13],row[14],row[15],row[16],row[17],row[18],row[19],row[20],row[21]]                 )
+            l_matches.append([row[0],dat,row[12],row[13],row[14],row[15],row[16],row[17],row[18],row[19],row[20],row[21]])
     l_m_sort=sorted(l_matches,key=lambda x: x[1] ) # сортировка по дате
-
     sh_3=wa['Рез']
 
     def l_rez_lig(a, b,k_match):

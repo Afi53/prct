@@ -147,7 +147,7 @@ def get_selen_F():
                 continue
             else:
                 tur = ' '.join(tur.split()[:3])  # названия лиг 3 слова
-            print(tur)
+#            print(tur)
             if not tur in d_ligs.values():  # поиск в значениях словаря лиг
                 try:
                     tur= d_ligs[tur]  # поиск по ключам
@@ -160,8 +160,6 @@ def get_selen_F():
                 mt = lig.find_element(By.XPATH, "./following-sibling::div[1]")  # переход к тегу с матчем
                 tag = mt.get_attribute('class')
             except Exception as ex:
-#                print(getframeinfo(currentframe()).lineno, tag)
-#                print(ex)
                 continue
             st_match(mt,tur)
         try:                                  # поиск элемента для скроллинга
@@ -174,7 +172,7 @@ def get_selen_F():
             a[1].send_keys(Keys.PAGE_DOWN)  # страница вниз
             time.sleep(20)
             a[1].send_keys(Keys.ARROW_UP)   # две строки вверх
-            time.sleep(15)
+            time.sleep(10)
             k += 1  # кол-во страниц
             print(k)
             # if k == 50:
@@ -189,12 +187,6 @@ def get_selen_F():
     except Exception as ex:
         print(ex)
     return l_match,fp,sh
-
-
-# l_matches,fp,sh=get_selen_F()
-# load_matches(l_matches,fp,sh)
-
-
 
 def get_png():
     directory=f'C:\\Users\Professional\prct\Bookmaker\Scrin'
@@ -239,7 +231,11 @@ def get_selen_LS(l_turn):
             title=driver.find_element(By.XPATH,'//div[@id="content"]').find_element(By.TAG_NAME,'h1').text
         except Exception:
             driver.refresh()
-            title = driver.find_element(By.XPATH, '//div[@id="content"]').find_element(By.TAG_NAME, 'h1').text
+            try:
+                title = driver.find_element(By.XPATH, '//div[@id="content"]').find_element(By.TAG_NAME, 'h1').text
+            except Exception:
+                driver.close()
+                continue
         driver.minimize_window()
         if title=='Главные события':
             driver.close()
@@ -271,8 +267,8 @@ def get_selen_LS(l_turn):
     with open(os.path.join(directory,file_back), "w", encoding="utf-8") as file:
         file.write(soup.prettify())
 
-    get_selen_BS(l_turn)
-    get_selen_Marafon(l_turn)
+    # get_selen_BS(l_turn)
+    # get_selen_Marafon(l_turn)
 #    driver.quit()
 
 def get_selen_BS(l_turn):                    #(l_turn):
